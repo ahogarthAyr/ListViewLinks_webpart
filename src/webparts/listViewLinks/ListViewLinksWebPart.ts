@@ -214,7 +214,7 @@ private LoadPageUrls(): void {
     var absContext = this.context.pageContext.legacyPageContext['portalUrl'].slice(0, -1);
     var pathContext = this.context.pageContext.site.serverRequestPath;
     var pageContextUrl = absContext + pathContext;
-    var pageID = this.context.pageContext.listItem.id
+    var pageID = this.context.pageContext.listItem.id;
     
     let html: string = '';
 
@@ -226,7 +226,6 @@ private LoadPageUrls(): void {
 
         if(key == 'Title'){
           var title = cells[j]['Value'];
-          // console.log('title:' + ' ' + title)
         }
         else if (key == 'Description'){
           var description = cells[j]['Value'];
@@ -239,31 +238,33 @@ private LoadPageUrls(): void {
         }
         else if(key == 'Section'){
           var section = cells[j]['Value'];
-          // console.log('section:' + ' ' + section)
         }
         else if(key == 'SectionB'){
           var sectionB = cells[j]['Value'];
-          // console.log('sectionB:' + ' ' + sectionB)
                  
-        if(pageContextUrl == sectionB || pageID == section){
-         if(promState == 0){
+        if(promState == 0){
+
+        var sectionBArray = sectionB.split('\;');
+       
+        if (sectionBArray.includes(pageContextUrl) || section.includes(pageID)){
+        
             console.log('title:' + ' ' + title);
             console.log('pageID:' + ' ' + pageID);
             console.log('section:' + section);
             console.log('pagecontexturl:' + pageContextUrl);
-            console.log('sectionB:' + sectionB);
+            console.log('sectionB:' + sectionBArray);
         
   
         html += 
         `       
-            <div id="item" class="${styles.column}" draggable="true" }>
+            <div id="item" class="${styles.column}" draggable="true">
                 <a class="${styles.title} "href="${url}">${title}</a>
                 <div class="${styles.description}" >${description}</div>
             </div>  
         `;  
-        
+        }
       }
-    }
+    
   }
         const listContainer: Element = this.domElement.querySelector('#spListContainer');
         listContainer.innerHTML = html; 
