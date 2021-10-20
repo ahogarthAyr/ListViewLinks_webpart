@@ -201,33 +201,42 @@ private LoadPageUrls(): void {
     let absUrl = this.context.pageContext.site.absoluteUrl + '/SitePages'
 
     let url = this.context.pageContext.web.absoluteUrl + 
-    `/_api/search/query?querytext=%27path:${absUrl} ShowInListView:yes%27&rowlimit=30&sortlist=%27ViewsLifetime:descending%27&selectproperties=%27DefaultEncodingUrl,%20Title,%20Description,%20promotedstate,ShowInListView,ProgId,Section,SectionB%27`;
+    `/_api/search/query?querytext=%27path:${absUrl} ShowInListView:yes%27&rowlimit=30&sortlist=%27ViewsLifetime:descending%27&selectproperties=%27DefaultEncodingUrl,%20Title,%20Description,%20promotedstate,ShowInListView,ProgId,Section,SectionB,ListItemID%27`;
     return this.context.spHttpClient.get(url, SPHttpClient.configurations.v1)
       .then((response: SPHttpClientResponse) => {
         return response.json();        
       });
     }
 
+  private GetPageId(): Promise<any> {
+
+  let pageID = this.context.pageContext.listItem.id;
+
+   let url = this.context.pageContext.web.absoluteUrl + `/_api/web/lists/getbytitle('site%20pages')/items(${pageID})?$select=EncodedAbsUrl,Title`
+    return this.context.spHttpClient.get(url, SPHttpClient.configurations.v1)
+    .then((response: SPHttpClientResponse) => {
+      return response.json();        
+    });
+
+  }
     
   private RenderMostViewed(items: any): any {
-  
-    var absContext = this.context.pageContext.legacyPageContext['portalUrl'].slice(0, -1);
-    var pathContext = this.context.pageContext.site.serverRequestPath;
-    var pageContextUrl = absContext + pathContext;
-    var pageID = this.context.pageContext.listItem.id;
-    
-    let html: string = '';
+
+  let html: string = ''; 
+
+  this.GetPageId().then(data =>{
+    var currentPageTitle = data.Title;
+    var currentPageUrl = data.EncodedAbsUrl;
 
     for(var i=0;i<items[i].Cells.length;i++){  
       var cells = items[i].Cells
-      // console.log(cells);
       for(var j=0;j<cells.length;j++){
         var key = cells[j]['Key'];
 
         if(key == 'Title'){
           var title = cells[j]['Value'];
         }
-        else if (key == 'Description'){
+        if (key == 'Description'){
           var description = cells[j]['Value'];
         }
         else if(key == 'DefaultEncodingUrl'){
@@ -241,37 +250,36 @@ private LoadPageUrls(): void {
         }
         else if(key == 'SectionB'){
           var sectionB = cells[j]['Value'];
-                 
-        if(promState == 0){
 
-        var sectionBArray = sectionB.split('\;');
-       
-        if (sectionBArray.includes(pageContextUrl) || section.includes(pageID)){
-        
+          if(promState == 0){
+            var sectionBArray = sectionB.split('\;');
+                        
+          if (sectionBArray.includes(currentPageUrl) || section.includes(currentPageTitle)){ 
+          
             console.log('title:' + ' ' + title);
-            console.log('pageID:' + ' ' + pageID);
+            console.log('currenttitle:' + ' ' + currentPageTitle);
             console.log('section:' + section);
-            console.log('pagecontexturl:' + pageContextUrl);
+            console.log('pagecontexturl:' + currentPageUrl);
             console.log('sectionB:' + sectionBArray);
-        
-  
+          
         html += 
         `       
             <div id="item" class="${styles.column}" draggable="true">
                 <a class="${styles.title} "href="${url}">${title}</a>
                 <div class="${styles.description}" >${description}</div>
             </div>  
-        `;  
-        }
+        `;   
       }
-    
-  }
         const listContainer: Element = this.domElement.querySelector('#spListContainer');
         listContainer.innerHTML = html; 
-      }
-    } 
-   
- }
+     }
+    }
+  }
+ }        
+});
+}   
+  
+
   
   private LoadViews(): void {
 
