@@ -32,7 +32,6 @@ export interface spLists{
 export default class ListViewWebPart extends BaseClientSideWebPart<IListViewWebPartProps> {
   private dropDownOptions: IPropertyPaneDropdownOption[] = []; 
   private listsDropdownDisabled: boolean = true;
-
   
   public render(): void {
     this.domElement.innerHTML = `
@@ -43,7 +42,9 @@ export default class ListViewWebPart extends BaseClientSideWebPart<IListViewWebP
         Select a list to add to this page.
         </div>
     </div>`; 
-    this.LoadViews();  
+    this.LoadViews();
+    // this.LoadPageID();  
+    // console.log(this.LoadPageID())
     console.log('Hello!!?')
   }
 
@@ -111,7 +112,7 @@ private GetPageUrls():Promise<any>{
   // console.log(path)
   
   let pageUrl = this.context.pageContext.web.absoluteUrl 
-  + `/_api/search/query?querytext=%27path:${path}%20STS_ListItem_DocumentLibrary%20fileType:aspx%27&rowlimit=30&sortlist=%27ViewsLifetime:descending%27&selectproperties=%27Title,Description,Path%27`;
+  + `/_api/search/query?querytext=%27path:${path}%20STS_ListItem_DocumentLibrary%20fileType:aspx%27&rowlimit=30&sortlist=%27ViewsLifetime:descending%27&selectproperties=%27Title,Description,Path,Section,SectionB%27`;
 
   return this.context.spHttpClient.get(pageUrl, SPHttpClient.configurations.v1).then((response: SPHttpClientResponse)=>{  
     return response.json();  
@@ -193,40 +194,35 @@ private LoadPageUrls(): void {
     };
   }
 
+  private GetPageId(): Promise<any> {
+
+    let pageID = this.context.pageContext.listItem.id;
   
-  private GetMostViewed(): Promise<any> {
+     let url = this.context.pageContext.web.absoluteUrl + `/_api/web/lists/getbytitle('site%20pages')/items(${pageID})?$select=EncodedAbsUrl,Title`;
+      return this.context.spHttpClient.get(url, SPHttpClient.configurations.v1)
+      .then((response: SPHttpClientResponse) => {
+        return response.json()      
+      });
+    }
+  
 
-    // query site pages for ViewsLifetime, sort descending and select properties to filter results
+  private GetMostViewed(currentTitle: string): Promise<any> {
 
-    let absUrl = this.context.pageContext.site.absoluteUrl + '/SitePages'
+    console.log('currentTitle:' + ' ' + currentTitle)
 
     let url = this.context.pageContext.web.absoluteUrl + 
-    `/_api/search/query?querytext=%27path:${absUrl} ShowInListView:yes%27&rowlimit=30&sortlist=%27ViewsLifetime:descending%27&selectproperties=%27DefaultEncodingUrl,%20Title,%20Description,%20promotedstate,ShowInListView,ProgId,Section,SectionB,ListItemID%27`;
+    `/_api/search/query?querytext=%27Section:"[${currentTitle}]" OR SectionB:"[${currentTitle}]" AND PromotedState:0%27&rowlimit=30&sortlist=%27ViewsLifetime:descending%27&selectproperties=%27DefaultEncodingUrl,%20Title,%20Description,%20promotedstate,Section,SectionB%27`; 
     return this.context.spHttpClient.get(url, SPHttpClient.configurations.v1)
       .then((response: SPHttpClientResponse) => {
         return response.json();        
       });
     }
 
-  private GetPageId(): Promise<any> {
-
-  let pageID = this.context.pageContext.listItem.id;
-
-   let url = this.context.pageContext.web.absoluteUrl + `/_api/web/lists/getbytitle('site%20pages')/items(${pageID})?$select=EncodedAbsUrl,Title`
-    return this.context.spHttpClient.get(url, SPHttpClient.configurations.v1)
-    .then((response: SPHttpClientResponse) => {
-      return response.json();        
-    });
-
-  }
     
   private RenderMostViewed(items: any): any {
 
   let html: string = ''; 
 
-  this.GetPageId().then(data =>{
-    var currentPageTitle = data.Title;
-    var currentPageUrl = data.EncodedAbsUrl;
 
     for(var i=0;i<items[i].Cells.length;i++){  
       var cells = items[i].Cells
@@ -253,13 +249,9 @@ private LoadPageUrls(): void {
 
           if(promState == 0){
             var sectionBArray = sectionB.split('\;');
-                        
-          if (sectionBArray.includes(currentPageUrl) || section.includes(currentPageTitle)){ 
-          
+                                  
             console.log('title:' + ' ' + title);
-            console.log('currenttitle:' + ' ' + currentPageTitle);
             console.log('section:' + section);
-            console.log('pagecontexturl:' + currentPageUrl);
             console.log('sectionB:' + sectionBArray);
           
         html += 
@@ -269,22 +261,25 @@ private LoadPageUrls(): void {
                 <div class="${styles.description}" >${description}</div>
             </div>  
         `;   
-      }
+   
         const listContainer: Element = this.domElement.querySelector('#spListContainer');
         listContainer.innerHTML = html; 
      }
     }
   }
  }        
-});
 }   
   
 
   
   private LoadViews(): void {
 
-    this.GetMostViewed().then((data)=>{
-     
+  this.GetPageId().then(data=>{
+  
+    var currentTitle = data.Title;
+
+    this.GetMostViewed(currentTitle).then((data)=>{
+    
       let listItems = data.PrimaryQueryResult.RelevantResults.Table.Rows
 
       console.log(listItems)
@@ -298,6 +293,7 @@ private LoadPageUrls(): void {
         this.LoadPageUrls()
       }
     })
+  })
   }
 
 }
