@@ -112,7 +112,7 @@ private GetPageUrls():Promise<any>{
   // console.log(path)
   
   let pageUrl = this.context.pageContext.web.absoluteUrl 
-  + `/_api/search/query?querytext=%27path:${path}%20STS_ListItem_DocumentLibrary%20fileType:aspx%27&rowlimit=30&sortlist=%27ViewsLifetime:descending%27&selectproperties=%27Title,Description,Path,Section,SectionB%27`;
+  + `/_api/search/query?querytext=%27path:${path}%20STS_ListItem_DocumentLibrary%20fileType:aspx%27&rowlimit=30&sortlist=%27ViewsLifetime:descending%27&selectproperties=%27Title,Description,Path%27`;
 
   return this.context.spHttpClient.get(pageUrl, SPHttpClient.configurations.v1).then((response: SPHttpClientResponse)=>{  
     return response.json();  
@@ -198,7 +198,7 @@ private LoadPageUrls(): void {
 
     let pageID = this.context.pageContext.listItem.id;
   
-     let url = this.context.pageContext.web.absoluteUrl + `/_api/web/lists/getbytitle('site%20pages')/items(${pageID})?$select=EncodedAbsUrl,Title`;
+     let url = this.context.pageContext.web.absoluteUrl + `/_api/web/lists/getbytitle('site%20pages')/items(${pageID})?$select=Title`;
       return this.context.spHttpClient.get(url, SPHttpClient.configurations.v1)
       .then((response: SPHttpClientResponse) => {
         return response.json()      
@@ -211,7 +211,7 @@ private LoadPageUrls(): void {
     console.log('currentTitle:' + ' ' + currentTitle)
 
     let url = this.context.pageContext.web.absoluteUrl + 
-    `/_api/search/query?querytext=%27Section:"[${currentTitle}]" OR SectionB:"[${currentTitle}]" AND PromotedState:0%27&rowlimit=30&sortlist=%27ViewsLifetime:descending%27&selectproperties=%27DefaultEncodingUrl,%20Title,%20Description,%20promotedstate,Section,SectionB%27`; 
+    `/_api/search/query?querytext=%27(DepartmentId:e89fbc41-aa8b-458a-a50a-0ba30345be86%20OR%20DepartmentId:{e89fbc41-aa8b-458a-a50a-0ba30345be86})%20AND%20(Section:${currentTitle} OR%20SectionB:${currentTitle})%20AND%20SPContentType:%22Site%20Page%22%20AND%20PromotedState:0%27&sortlist=%27ViewsLifetime:descending%27&selectproperties=%27Path,%20Title,%20Description,ViewsLifeTime%27`;    
     return this.context.spHttpClient.get(url, SPHttpClient.configurations.v1)
       .then((response: SPHttpClientResponse) => {
         return response.json();        
@@ -226,51 +226,34 @@ private LoadPageUrls(): void {
 
     for(var i=0;i<items[i].Cells.length;i++){  
       var cells = items[i].Cells
+
       for(var j=0;j<cells.length;j++){
         var key = cells[j]['Key'];
 
-        if(key == 'Title'){
-          var title = cells[j]['Value'];
-        }
-        if (key == 'Description'){
-          var description = cells[j]['Value'];
-        }
-        else if(key == 'DefaultEncodingUrl'){
+        if(key == 'Path'){
           var url = cells[j]['Value'];
         }
-        else if(key == 'promotedstate'){
-          var promState = cells[j]['Value'];
+        if (key == 'Title'){
+          var title = cells[j]['Value'];
         }
-        else if(key == 'Section'){
-          var section = cells[j]['Value'];
-        }
-        else if(key == 'SectionB'){
-          var sectionB = cells[j]['Value'];
-
-          if(promState == 0){
-            var sectionBArray = sectionB.split('\;');
-                                  
-            console.log('title:' + ' ' + title);
-            console.log('section:' + section);
-            console.log('sectionB:' + sectionBArray);
-          
+        if(key == 'Description'){
+          var description = cells[j]['Value'];
+        
         html += 
         `       
             <div id="item" class="${styles.column}" draggable="true">
                 <a class="${styles.title} "href="${url}">${title}</a>
                 <div class="${styles.description}" >${description}</div>
             </div>  
-        `;   
-   
+        `;
         const listContainer: Element = this.domElement.querySelector('#spListContainer');
         listContainer.innerHTML = html; 
-     }
-    }
+    
+        }
+      }
   }
- }        
-}   
-  
-
+}
+        
   
   private LoadViews(): void {
 
