@@ -211,7 +211,9 @@ private LoadPageUrls(): void {
     console.log('currentTitle:' + ' ' + currentTitle)
 
     let url = this.context.pageContext.web.absoluteUrl + 
-    `/_api/search/query?querytext=%27(DepartmentId:e89fbc41-aa8b-458a-a50a-0ba30345be86%20OR%20DepartmentId:{e89fbc41-aa8b-458a-a50a-0ba30345be86})%20AND%20(Section:${currentTitle}%20OR%20SectionB:${currentTitle})%20AND%20(SPContentType:"Site%20Page"%20OR%20SPContentType:"Link%20to%20a%20document")%27&sortlist=%27ViewsLifetime:descending%27&selectproperties=%27Path,Title,Description,ViewsLifeTime%27`;
+    `/_api/search/query?querytext=%27(DepartmentId:e89fbc41-aa8b-458a-a50a-0ba30345be86%20OR%20DepartmentId:{e89fbc41-aa8b-458a-a50a-0ba30345be86})%20AND%20(Section:"${currentTitle}"%20OR%20SectionB:"${currentTitle}")%20AND%20(SPContentType:"Site%20Page"%20OR%20SPContentType:"Link%20to%20a%20document")%27&sortlist=%27ViewsLifetime:descending%27&selectproperties=%27Path,Title,Description,ViewsLifeTime,Section,SectionB%27`;
+    console.log('query:' + ' ' + url);
+    
     return this.context.spHttpClient.get(url, SPHttpClient.configurations.v1)
       .then((response: SPHttpClientResponse) => {
         return response.json();        
